@@ -20,8 +20,8 @@ ConekoAudioProcessorEditor::ConekoAudioProcessorEditor(ConekoAudioProcessor &p)
   // set AudioFormatManager for reading IR file
   formatManager.registerBasicFormats();
 
-  const auto sliderStyle = juce::Slider::RotaryHorizontalVerticalDrag;
-  const auto sliderLabelJustification = juce::Justification::centred;
+  // const auto sliderStyle = juce::Slider::RotaryHorizontalVerticalDrag;
+  // const auto sliderLabelJustification = juce::Justification::centred;
 
   addAndMakeVisible(openIRFileButton);
   openIRFileButton.setButtonText("Open IR File...");

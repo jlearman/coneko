@@ -71,14 +71,14 @@ int ConekoAudioProcessor::getNumPrograms() {
 
 int ConekoAudioProcessor::getCurrentProgram() { return 0; }
 
-void ConekoAudioProcessor::setCurrentProgram(int index) {}
+void ConekoAudioProcessor::setCurrentProgram(int /*index*/) {}
 
-const juce::String ConekoAudioProcessor::getProgramName(int index) {
+const juce::String ConekoAudioProcessor::getProgramName(int /*oindex*/) {
   return {};
 }
 
-void ConekoAudioProcessor::changeProgramName(int index,
-                                             const juce::String &newName) {}
+void ConekoAudioProcessor::changeProgramName(int /*index*/,
+                                             const juce::String &/*newName*/) { }
 
 //==============================================================================
 void ConekoAudioProcessor::prepareToPlay(double sampleRate,
@@ -89,7 +89,7 @@ void ConekoAudioProcessor::prepareToPlay(double sampleRate,
   spec.numChannels = getTotalNumOutputChannels();
   spec.maximumBlockSize = samplesPerBlock;
 
-  soundtouch.setSampleRate(sampleRate);
+  soundtouch.setSampleRate((uint)sampleRate);
   soundtouch.setChannels(1);
 
   inputGainer.prepare(spec);
@@ -99,7 +99,7 @@ void ConekoAudioProcessor::prepareToPlay(double sampleRate,
   dryWetMixer.prepare(spec);
   dryWetMixer.reset();
   delay.prepare(spec);
-  delay.setMaximumDelayInSamples(sampleRate);
+  delay.setMaximumDelayInSamples((int)sampleRate);
   delay.reset();
   convolver.prepare(spec);
   convolver.reset();
@@ -142,7 +142,7 @@ bool ConekoAudioProcessor::isBusesLayoutSupported(
 #endif
 
 void ConekoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
-                                        juce::MidiBuffer &midiMessages) {
+                                        juce::MidiBuffer &/*midiMessages*/) {
   juce::ScopedNoDenormals noDenormals;
   auto totalNumInputChannels = getTotalNumInputChannels();
   auto totalNumOutputChannels = getTotalNumOutputChannels();
@@ -165,14 +165,14 @@ void ConekoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
   auto isBypassed = apvts.getRawParameterValue("Bypassed");
   updateFilterParameters();
 
-  if (isBypassed->load() == true) {
+  if (isBypassed->load() != 0.0) {
     return;
   }
 
   inputGainer.setGainDecibels(inputGainValue->load());
   outputGainer.setGainDecibels(outputGainValue->load());
   dryWetMixer.setWetMixProportion(dryWetMixValue->load() / 100.0f);
-  delay.setDelay(preDelayTimeValue->load() / 1000.0 * this->getSampleRate());
+  delay.setDelay(preDelayTimeValue->load() / 1000.0f * static_cast<float>(this->getSampleRate()));
 
   auto block = juce::dsp::AudioBlock<float>(buffer);
   auto context = juce::dsp::ProcessContextReplacing<float>(block);
@@ -183,7 +183,7 @@ void ConekoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 
   // set stereo width using mid/side technique
   if (context.getInputBlock().getNumChannels() == 2) {
-    const float width = stereoWidthValue->load() / 100.0;
+    const float width = static_cast<float>(stereoWidthValue->load()) / 100.0f;
     for (int sample = 0; sample < context.getInputBlock().getNumSamples();
          ++sample) {
       float left = context.getInputBlock().getSample(0, sample);
@@ -212,14 +212,14 @@ juce::AudioProcessorEditor *ConekoAudioProcessor::createEditor() {
 }
 
 //==============================================================================
-void ConekoAudioProcessor::getStateInformation(juce::MemoryBlock &destData) {
+void ConekoAudioProcessor::getStateInformation(juce::MemoryBlock &/*destData*/) {
   // You should use this method to store your parameters in the memory block.
   // You could do that either as raw data, or use the XML or ValueTree classes
   // as intermediaries to make it easy to save and load complex data.
 }
 
-void ConekoAudioProcessor::setStateInformation(const void *data,
-                                               int sizeInBytes) {
+void ConekoAudioProcessor::setStateInformation(const void */*data*/,
+                                               int /*sizeInBytes*/) {
   // You should use this method to restore your parameters from this memory
   // block, whose contents will have been created by the getStateInformation()
   // call.
@@ -246,17 +246,17 @@ void ConekoAudioProcessor::loadImpulseResponse() {
   // normalized IR signal
   float globalMaxMagnitude =
       originalIRBuffer.getMagnitude(0, originalIRBuffer.getNumSamples());
-  originalIRBuffer.applyGain(1.0f / (globalMaxMagnitude + 0.01));
+  originalIRBuffer.applyGain(1.0f / (globalMaxMagnitude + 0.01f));
 
   // trim IR signal
   int numSamples = originalIRBuffer.getNumSamples();
-  int blockSize = static_cast<int>(std::floor(this->getSampleRate()) / 100);
+  int blkSize = static_cast<int>(std::floor(this->getSampleRate()) / 100);
   int startBlockNum = 0;
-  int endBlockNum = numSamples / blockSize;
+  int endBlockNum = numSamples / blkSize;
   float localMaxMagnitude = 0.0f;
-  while ((startBlockNum + 1) * blockSize < numSamples) {
+  while ((startBlockNum + 1) * blkSize < numSamples) {
     localMaxMagnitude =
-        originalIRBuffer.getMagnitude(startBlockNum * blockSize, blockSize);
+        originalIRBuffer.getMagnitude(startBlockNum * blkSize, blkSize);
     // find the start position of IR
     if (localMaxMagnitude > 0.001) {
       break;
@@ -264,10 +264,10 @@ void ConekoAudioProcessor::loadImpulseResponse() {
     ++startBlockNum;
   }
   localMaxMagnitude = 0.0f;
-  while ((endBlockNum - 1) * blockSize > 0) {
+  while ((endBlockNum - 1) * blkSize > 0) {
     --endBlockNum;
     localMaxMagnitude =
-        originalIRBuffer.getMagnitude(endBlockNum * blockSize, blockSize);
+        originalIRBuffer.getMagnitude(endBlockNum * blkSize, blkSize);
     // find the time to decay by 60 dB (T60)
     if (localMaxMagnitude > 0.001) {
       break;
@@ -275,10 +275,10 @@ void ConekoAudioProcessor::loadImpulseResponse() {
   }
 
   int trimmedNumSamples;
-  if (endBlockNum * blockSize < numSamples) {
-    trimmedNumSamples = (endBlockNum - startBlockNum) * blockSize - 1;
+  if (endBlockNum * blkSize < numSamples) {
+    trimmedNumSamples = (endBlockNum - startBlockNum) * blkSize - 1;
   } else {
-    trimmedNumSamples = numSamples - startBlockNum * blockSize;
+    trimmedNumSamples = numSamples - startBlockNum * blkSize;
   }
   modifiedIRBuffer.setSize(originalIRBuffer.getNumChannels(), trimmedNumSamples,
                            false, true, false);
@@ -288,7 +288,7 @@ void ConekoAudioProcessor::loadImpulseResponse() {
       modifiedIRBuffer.setSample(
           channel, sample,
           originalIRBuffer.getSample(channel,
-                                     sample + startBlockNum * blockSize));
+                                     sample + startBlockNum * blkSize));
     }
   }
 
@@ -299,7 +299,7 @@ void ConekoAudioProcessor::loadImpulseResponse() {
       static_cast<double>(trimmedNumSamples) / this->getSampleRate();
   decayTimeParam->beginChangeGesture();
   decayTimeParam->setValueNotifyingHost(
-      decayTimeParam->convertTo0to1(decayTime));
+      decayTimeParam->convertTo0to1(static_cast<float>(decayTime)));
   decayTimeParam->endChangeGesture();
 
   updateImpulseResponse(modifiedIRBuffer);
@@ -354,7 +354,7 @@ void ConekoAudioProcessor::updateIRParameters() {
 
   // reverse of the IR
   auto isReversed = apvts.getRawParameterValue("Reversed");
-  if (isReversed->load() == true) {
+  if (isReversed->load() != 0.0) {
     modifiedIRBuffer.reverse(0, modifiedIRBuffer.getNumSamples());
   }
 
@@ -362,7 +362,7 @@ void ConekoAudioProcessor::updateIRParameters() {
 }
 
 void ConekoAudioProcessor::updateFilterParameters() {
-  const float sampleRate = this->getSampleRate();
+  const float sampleRate = static_cast<float>(this->getSampleRate());
 
   auto lowShelfFreqValue = apvts.getRawParameterValue("LowShelfFreq");
   auto lowShelfGainValue = apvts.getRawParameterValue("LowShelfGain");
