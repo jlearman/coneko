@@ -160,8 +160,8 @@ void ConekoAudioProcessorEditor::resized() {
 
 void ConekoAudioProcessorEditor::openButtonClicked() {
   fileChooser = std::make_unique<juce::FileChooser>(
-      "Choose a support IR File (WAV, AIFF, OGG)...", juce::File(),
-      "*.wav;*.aif;*.aiff;*.ogg", true, false);
+      "Choose a support IR File (WAV, AIFF, OGG, FLAC)...", juce::File(),
+      "*.wav;*.aif;*.aiff;*.ogg;*.flac", true, false);
   auto chooserFlags = juce::FileBrowserComponent::openMode |
                       juce::FileBrowserComponent::canSelectFiles;
   fileChooser->launchAsync(chooserFlags, [this](const juce::FileChooser &fc) {
