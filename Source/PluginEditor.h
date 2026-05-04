@@ -42,8 +42,8 @@ private:
 
   juce::TextButton openIRFileButton;
   juce::Label irFileLabel;
-  juce::ToggleButton reverseButton;
-  std::unique_ptr<APVTS::ButtonAttachment> reverseButtonAttachment;
+  // juce::ToggleButton reverseButton;
+  // std::unique_ptr<APVTS::ButtonAttachment> reverseButtonAttachment;
   juce::ToggleButton bypassButton;
   std::unique_ptr<APVTS::ButtonAttachment> bypassButtonAttachment;
   juce::Slider inputGainSlider;
@@ -55,15 +55,15 @@ private:
   juce::Slider dryWetMixSlider;
   juce::Label dryWetMixLabel;
   std::unique_ptr<APVTS::SliderAttachment> dryWetMixSliderAttachment;
-  juce::Slider decayTimeSlider;
-  juce::Label decayTimeLabel;
-  std::unique_ptr<APVTS::SliderAttachment> decayTimeSliderAttachment;
-  juce::Slider preDelayTimeSlider;
-  juce::Label preDelayTimeLabel;
-  std::unique_ptr<APVTS::SliderAttachment> preDelayTimeSliderAttachment;
-  juce::Slider stereoWidthSlider;
-  juce::Label stereoWidthLabel;
-  std::unique_ptr<APVTS::SliderAttachment> stereoWidthSliderAttachment;
+  // juce::Slider decayTimeSlider;
+  // juce::Label decayTimeLabel;
+  // std::unique_ptr<APVTS::SliderAttachment> decayTimeSliderAttachment;
+  // juce::Slider preDelayTimeSlider;
+  // juce::Label preDelayTimeLabel;
+  // std::unique_ptr<APVTS::SliderAttachment> preDelayTimeSliderAttachment;
+  // juce::Slider stereoWidthSlider;
+  // juce::Label stereoWidthLabel;
+  // std::unique_ptr<APVTS::SliderAttachment> stereoWidthSliderAttachment;
   juce::Slider lowShelfFreqSlider;
   juce::Label lowShelfFreqLabel;
   std::unique_ptr<APVTS::SliderAttachment> lowShelfFreqSliderAttachment;

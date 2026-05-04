@@ -89,8 +89,8 @@ void ConekoAudioProcessor::prepareToPlay(double sampleRate,
   spec.numChannels = getTotalNumOutputChannels();
   spec.maximumBlockSize = samplesPerBlock;
 
-  soundtouch.setSampleRate((uint)sampleRate);
-  soundtouch.setChannels(1);
+  // soundtouch.setSampleRate((uint)sampleRate);
+  // soundtouch.setChannels(1);
 
   inputGainer.prepare(spec);
   inputGainer.reset();
@@ -98,9 +98,9 @@ void ConekoAudioProcessor::prepareToPlay(double sampleRate,
   outputGainer.reset();
   dryWetMixer.prepare(spec);
   dryWetMixer.reset();
-  delay.prepare(spec);
-  delay.setMaximumDelayInSamples((int)sampleRate);
-  delay.reset();
+  // delay.prepare(spec);
+  // delay.setMaximumDelayInSamples((int)sampleRate);
+  // delay.reset();
   convolver.prepare(spec);
   convolver.reset();
 
@@ -172,15 +172,16 @@ void ConekoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
   inputGainer.setGainDecibels(inputGainValue->load());
   outputGainer.setGainDecibels(outputGainValue->load());
   dryWetMixer.setWetMixProportion(dryWetMixValue->load() / 100.0f);
-  delay.setDelay(preDelayTimeValue->load() / 1000.0f * static_cast<float>(this->getSampleRate()));
+  // delay.setDelay(preDelayTimeValue->load() / 1000.0f * static_cast<float>(this->getSampleRate()));
 
   auto block = juce::dsp::AudioBlock<float>(buffer);
   auto context = juce::dsp::ProcessContextReplacing<float>(block);
   inputGainer.process(context);
   dryWetMixer.pushDrySamples(block);
   convolver.process(context);
-  delay.process(context);
+  // delay.process(context);
 
+#if 0
   // set stereo width using mid/side technique
   if (context.getInputBlock().getNumChannels() == 2) {
     const float width = static_cast<float>(stereoWidthValue->load()) / 100.0f;
@@ -194,6 +195,7 @@ void ConekoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
           1, sample, left * (1 - width) / 2 + right * (1 + width) / 2);
     }
   }
+#endif
 
   lowShelfFilter.process(context);
   highShelfFilter.process(context);
@@ -248,6 +250,7 @@ void ConekoAudioProcessor::loadImpulseResponse() {
       originalIRBuffer.getMagnitude(0, originalIRBuffer.getNumSamples());
   originalIRBuffer.applyGain(1.0f / (globalMaxMagnitude + 0.01f));
 
+#if 0
   // trim IR signal
   int numSamples = originalIRBuffer.getNumSamples();
   int blkSize = static_cast<int>(std::floor(this->getSampleRate()) / 100);
@@ -301,15 +304,16 @@ void ConekoAudioProcessor::loadImpulseResponse() {
   decayTimeParam->setValueNotifyingHost(
       decayTimeParam->convertTo0to1(static_cast<float>(decayTime)));
   decayTimeParam->endChangeGesture();
+#endif
 
-  updateImpulseResponse(modifiedIRBuffer);
+  updateImpulseResponse(originalIRBuffer);
 }
 
 void ConekoAudioProcessor::updateImpulseResponse(
     juce::AudioBuffer<float> irBuffer) {
   convolver.loadImpulseResponse(std::move(irBuffer), this->getSampleRate(),
                                 juce::dsp::Convolution::Stereo::yes,
-                                juce::dsp::Convolution::Trim::no,
+                                juce::dsp::Convolution::Trim::yes,
                                 juce::dsp::Convolution::Normalise::yes);
 }
 
@@ -318,15 +322,14 @@ void ConekoAudioProcessor::updateIRParameters() {
     return;
   }
 
+#if 0
   // stretch IR according to decay time
-  auto decayTimeValue = apvts.getRawParameterValue("DecayTime");
-  int decaySample = static_cast<int>(
-      std::round(decayTimeValue->load() * this->getSampleRate()));
-  double stretchRatio =
-      originalIRBuffer.getNumSamples() / static_cast<double>(decaySample);
+  // auto decayTimeValue = apvts.getRawParameterValue("DecayTime");
+  // int decaySample = static_cast<int>(std::round(decayTimeValue->load() * this->getSampleRate()));
+  // double stretchRatio = originalIRBuffer.getNumSamples() / static_cast<double>(decaySample);
 
   int numChannels = originalIRBuffer.getNumChannels();
-  soundtouch.setTempo(stretchRatio);
+  // soundtouch.setTempo(stretchRatio);
   modifiedIRBuffer.setSize(numChannels, decaySample, false, true, false);
   for (int channel = 0; channel < numChannels; ++channel) {
     soundtouch.putSamples(originalIRBuffer.getReadPointer(channel),
@@ -335,6 +338,7 @@ void ConekoAudioProcessor::updateIRParameters() {
                               decaySample);
     soundtouch.clear();
   }
+#endif
 
   // delay IR according to pre-delay time
   // auto preDelayTimeValue = apvts.getRawParameterValue("PreDelayTime");
@@ -352,14 +356,16 @@ void ConekoAudioProcessor::updateIRParameters() {
   //                            tempBuffer.getNumSamples());
   //}
 
+#if 0
   // reverse of the IR
   auto isReversed = apvts.getRawParameterValue("Reversed");
   if (isReversed->load() != 0.0) {
     modifiedIRBuffer.reverse(0, modifiedIRBuffer.getNumSamples());
   }
-
-  updateImpulseResponse(modifiedIRBuffer);
+#endif
+  updateImpulseResponse(originalIRBuffer);
 }
+
 
 void ConekoAudioProcessor::updateFilterParameters() {
   const float sampleRate = static_cast<float>(this->getSampleRate());

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "../soundtouch/SoundTouch.h"
+// #include "../soundtouch/SoundTouch.h"
 #include <JuceHeader.h>
 
 //==============================================================================
@@ -73,14 +73,14 @@ private:
   juce::AudioBuffer<float> originalIRBuffer;
   juce::AudioBuffer<float> modifiedIRBuffer;
 
-  soundtouch::SoundTouch soundtouch;
+  // soundtouch::SoundTouch soundtouch;
 
   APVTS::ParameterLayout createParameters();
 
   juce::dsp::Gain<float> inputGainer;
   juce::dsp::Gain<float> outputGainer;
   juce::dsp::DryWetMixer<float> dryWetMixer;
-  juce::dsp::DelayLine<float> delay;
+  // juce::dsp::DelayLine<float> delay;
   juce::dsp::Convolution convolver;
   juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>,
                                  juce::dsp::IIR::Coefficients<float>>
