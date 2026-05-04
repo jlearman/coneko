@@ -89,18 +89,12 @@ void ConekoAudioProcessor::prepareToPlay(double sampleRate,
   spec.numChannels = getTotalNumOutputChannels();
   spec.maximumBlockSize = samplesPerBlock;
 
-  // soundtouch.setSampleRate((uint)sampleRate);
-  // soundtouch.setChannels(1);
-
   inputGainer.prepare(spec);
   inputGainer.reset();
   outputGainer.prepare(spec);
   outputGainer.reset();
   dryWetMixer.prepare(spec);
   dryWetMixer.reset();
-  // delay.prepare(spec);
-  // delay.setMaximumDelayInSamples((int)sampleRate);
-  // delay.reset();
   convolver.prepare(spec);
   convolver.reset();
 
@@ -172,30 +166,12 @@ void ConekoAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
   inputGainer.setGainDecibels(inputGainValue->load());
   outputGainer.setGainDecibels(outputGainValue->load());
   dryWetMixer.setWetMixProportion(dryWetMixValue->load() / 100.0f);
-  // delay.setDelay(preDelayTimeValue->load() / 1000.0f * static_cast<float>(this->getSampleRate()));
 
   auto block = juce::dsp::AudioBlock<float>(buffer);
   auto context = juce::dsp::ProcessContextReplacing<float>(block);
   inputGainer.process(context);
   dryWetMixer.pushDrySamples(block);
   convolver.process(context);
-  // delay.process(context);
-
-#if 0
-  // set stereo width using mid/side technique
-  if (context.getInputBlock().getNumChannels() == 2) {
-    const float width = static_cast<float>(stereoWidthValue->load()) / 100.0f;
-    for (int sample = 0; sample < context.getInputBlock().getNumSamples();
-         ++sample) {
-      float left = context.getInputBlock().getSample(0, sample);
-      float right = context.getInputBlock().getSample(1, sample);
-      context.getOutputBlock().setSample(
-          0, sample, left * (1 + width) / 2 + right * (1 - width) / 2);
-      context.getOutputBlock().setSample(
-          1, sample, left * (1 - width) / 2 + right * (1 + width) / 2);
-    }
-  }
-#endif
 
   lowShelfFilter.process(context);
   highShelfFilter.process(context);
@@ -250,62 +226,6 @@ void ConekoAudioProcessor::loadImpulseResponse() {
       originalIRBuffer.getMagnitude(0, originalIRBuffer.getNumSamples());
   originalIRBuffer.applyGain(1.0f / (globalMaxMagnitude + 0.01f));
 
-#if 0
-  // trim IR signal
-  int numSamples = originalIRBuffer.getNumSamples();
-  int blkSize = static_cast<int>(std::floor(this->getSampleRate()) / 100);
-  int startBlockNum = 0;
-  int endBlockNum = numSamples / blkSize;
-  float localMaxMagnitude = 0.0f;
-  while ((startBlockNum + 1) * blkSize < numSamples) {
-    localMaxMagnitude =
-        originalIRBuffer.getMagnitude(startBlockNum * blkSize, blkSize);
-    // find the start position of IR
-    if (localMaxMagnitude > 0.001) {
-      break;
-    }
-    ++startBlockNum;
-  }
-  localMaxMagnitude = 0.0f;
-  while ((endBlockNum - 1) * blkSize > 0) {
-    --endBlockNum;
-    localMaxMagnitude =
-        originalIRBuffer.getMagnitude(endBlockNum * blkSize, blkSize);
-    // find the time to decay by 60 dB (T60)
-    if (localMaxMagnitude > 0.001) {
-      break;
-    }
-  }
-
-  int trimmedNumSamples;
-  if (endBlockNum * blkSize < numSamples) {
-    trimmedNumSamples = (endBlockNum - startBlockNum) * blkSize - 1;
-  } else {
-    trimmedNumSamples = numSamples - startBlockNum * blkSize;
-  }
-  modifiedIRBuffer.setSize(originalIRBuffer.getNumChannels(), trimmedNumSamples,
-                           false, true, false);
-  for (int channel = 0; channel < originalIRBuffer.getNumChannels();
-       ++channel) {
-    for (int sample = 0; sample < trimmedNumSamples; ++sample) {
-      modifiedIRBuffer.setSample(
-          channel, sample,
-          originalIRBuffer.getSample(channel,
-                                     sample + startBlockNum * blkSize));
-    }
-  }
-
-  originalIRBuffer.makeCopyOf(modifiedIRBuffer);
-
-  auto decayTimeParam = apvts.getParameter("DecayTime");
-  double decayTime =
-      static_cast<double>(trimmedNumSamples) / this->getSampleRate();
-  decayTimeParam->beginChangeGesture();
-  decayTimeParam->setValueNotifyingHost(
-      decayTimeParam->convertTo0to1(static_cast<float>(decayTime)));
-  decayTimeParam->endChangeGesture();
-#endif
-
   updateImpulseResponse(originalIRBuffer);
 }
 
@@ -317,52 +237,12 @@ void ConekoAudioProcessor::updateImpulseResponse(
                                 juce::dsp::Convolution::Normalise::yes);
 }
 
+// TODO: remove this since there aren't any more IR parameters?
 void ConekoAudioProcessor::updateIRParameters() {
   if (originalIRBuffer.getNumSamples() < 1) {
     return;
   }
 
-#if 0
-  // stretch IR according to decay time
-  // auto decayTimeValue = apvts.getRawParameterValue("DecayTime");
-  // int decaySample = static_cast<int>(std::round(decayTimeValue->load() * this->getSampleRate()));
-  // double stretchRatio = originalIRBuffer.getNumSamples() / static_cast<double>(decaySample);
-
-  int numChannels = originalIRBuffer.getNumChannels();
-  // soundtouch.setTempo(stretchRatio);
-  modifiedIRBuffer.setSize(numChannels, decaySample, false, true, false);
-  for (int channel = 0; channel < numChannels; ++channel) {
-    soundtouch.putSamples(originalIRBuffer.getReadPointer(channel),
-                          originalIRBuffer.getNumSamples());
-    soundtouch.receiveSamples(modifiedIRBuffer.getWritePointer(channel),
-                              decaySample);
-    soundtouch.clear();
-  }
-#endif
-
-  // delay IR according to pre-delay time
-  // auto preDelayTimeValue = apvts.getRawParameterValue("PreDelayTime");
-  // int preDelaySample = static_cast<int>(std::round(preDelayTimeValue->load())
-  // /
-  //                                      1000 * this->getSampleRate());
-  // juce::AudioBuffer<float> tempBuffer(modifiedIRBuffer);
-  // modifiedIRBuffer.setSize(numChannels,
-  //                         preDelaySample + tempBuffer.getNumSamples(), false,
-  //                         false, false);
-  // modifiedIRBuffer.clear();
-  // for (int channel = 0; channel < numChannels; ++channel) {
-  //  modifiedIRBuffer.copyFrom(channel, preDelaySample,
-  //                            tempBuffer.getReadPointer(channel),
-  //                            tempBuffer.getNumSamples());
-  //}
-
-#if 0
-  // reverse of the IR
-  auto isReversed = apvts.getRawParameterValue("Reversed");
-  if (isReversed->load() != 0.0) {
-    modifiedIRBuffer.reverse(0, modifiedIRBuffer.getNumSamples());
-  }
-#endif
   updateImpulseResponse(originalIRBuffer);
 }
 
