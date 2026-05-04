@@ -20,28 +20,12 @@ ConekoAudioProcessorEditor::ConekoAudioProcessorEditor(ConekoAudioProcessor &p)
   // set AudioFormatManager for reading IR file
   formatManager.registerBasicFormats();
 
-  // const auto sliderStyle = juce::Slider::RotaryHorizontalVerticalDrag;
-  // const auto sliderLabelJustification = juce::Justification::centred;
-
   addAndMakeVisible(openIRFileButton);
   openIRFileButton.setButtonText("Open IR File...");
   openIRFileButton.onClick = [this] { openButtonClicked(); };
   addAndMakeVisible(irFileLabel);
   irFileLabel.setText("", juce::dontSendNotification);
   irFileLabel.setJustificationType(juce::Justification::centredLeft);
-
-#if 0
-  addAndMakeVisible(reverseButton);
-  reverseButton.setButtonText("Reverse IR");
-  reverseButton.setEnabled(enableIRParameters);
-  reverseButton.onClick = [this] {
-    audioProcessor.updateIRParameters();
-    shouldPaintWaveform = true;
-    repaint();
-  };
-  reverseButtonAttachment = std::make_unique<APVTS::ButtonAttachment>(
-      audioProcessor.apvts, "Reversed", reverseButton);
-#endif
 
   addAndMakeVisible(bypassButton);
   bypassButton.setButtonText("Bypass");
@@ -62,34 +46,6 @@ ConekoAudioProcessorEditor::ConekoAudioProcessorEditor(ConekoAudioProcessor &p)
   createLabel(dryWetMixLabel, "Mix", &dryWetMixSlider);
   dryWetMixSliderAttachment = std::make_unique<APVTS::SliderAttachment>(
       audioProcessor.apvts, "DryWetMix", dryWetMixSlider);
-
-#if 0
-  createSlider(decayTimeSlider, " s");
-  decayTimeSlider.setEnabled(enableIRParameters);
-  decayTimeSlider.onDragEnd = [this] {
-    audioProcessor.updateIRParameters();
-    shouldPaintWaveform = true;
-    repaint();
-  };
-  createLabel(decayTimeLabel, "Decay", &decayTimeSlider);
-  decayTimeSliderAttachment = std::make_unique<APVTS::SliderAttachment>(
-      audioProcessor.apvts, "DecayTime", decayTimeSlider);
-
-  createSlider(preDelayTimeSlider, " ms");
-  // preDelayTimeSlider.onDragEnd = [this] {
-  //  audioProcessor.updateIRParameters();
-  //  shouldPaintWaveform = true;
-  //  repaint();
-  //};
-  createLabel(preDelayTimeLabel, "Pre-delay", &preDelayTimeSlider);
-  preDelayTimeSliderAttachment = std::make_unique<APVTS::SliderAttachment>(
-      audioProcessor.apvts, "PreDelayTime", preDelayTimeSlider);
-
-  createSlider(stereoWidthSlider, " %");
-  createLabel(stereoWidthLabel, "Width", &stereoWidthSlider);
-  stereoWidthSliderAttachment = std::make_unique<APVTS::SliderAttachment>(
-      audioProcessor.apvts, "StereoWidth", stereoWidthSlider);
-#endif
 
   createSlider(lowShelfFreqSlider, " Hz");
   createLabel(lowShelfFreqLabel, "LowFreq", &lowShelfFreqSlider);
@@ -177,10 +133,6 @@ void ConekoAudioProcessorEditor::resized() {
                              40);
   irFileLabel.setBounds(leftRightMargin, topBottomMargin + 45, dialWidth * 3,
                         20);
-#if 0
-  reverseButton.setBounds(leftRightMargin + dialWidth * 2, topBottomMargin + 40,
-                          dialWidth, 30);
-#endif
   bypassButton.setBounds(getWidth() - leftRightMargin - dialWidth * 3,
                          topBottomMargin, dialWidth, 20);
   inputGainSlider.setBounds(leftRightMargin,
@@ -192,17 +144,6 @@ void ConekoAudioProcessorEditor::resized() {
   dryWetMixSlider.setBounds(leftRightMargin + dialWidth * 2,
                             getHeight() - topBottomMargin - dialHeight,
                             dialWidth, dialHeight);
-#if 0
-  decayTimeSlider.setBounds(leftRightMargin + dialWidth * 3,
-                            getHeight() - topBottomMargin - dialHeight * 3 + 30,
-                            dialWidth * 3, dialHeight * 3 - 30);
-  preDelayTimeSlider.setBounds(getWidth() - leftRightMargin - dialWidth * 3,
-                               topBottomMargin + dialHeight / 3 * 2, dialWidth,
-                               dialHeight);
-  stereoWidthSlider.setBounds(getWidth() - leftRightMargin - dialWidth * 3,
-                              getHeight() - topBottomMargin - dialHeight,
-                              dialWidth, dialHeight);
-#endif
   lowShelfFreqSlider.setBounds(getWidth() - leftRightMargin - dialWidth * 2,
                                topBottomMargin + dialHeight / 3 * 2, dialWidth,
                                dialHeight);
